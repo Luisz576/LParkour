@@ -1,0 +1,11 @@
+main: com.luisz.lparkour.Main
+name: LParkour
+author: Luisz576
+version: 1.0
+depend: [lib576]
+api-version: 1.16
+commands:
+  lpc:
+    description: LParkour Constructor
+  lpg:
+    description: LParkour Game
