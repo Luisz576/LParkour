@@ -1,9 +1,19 @@
 package com.luisz.lparkour.game.listener;
 
+import com.lib576.Lib576;
+import com.lib576.utils.LConvert;
+import com.luisz.lparkour.GamesController;
+import com.luisz.lparkour.game.Game;
+import com.luisz.lparkour.game.commons.GamePlayerProfile;
+import com.luisz.lparkour.game.commons.GameState;
 import com.luisz.lparkour.game.events.*;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerMoveEvent;
+
+import java.util.List;
 
 public class GameListener implements Listener {
 
@@ -35,17 +45,59 @@ public class GameListener implements Listener {
 
     @EventHandler
     public void onGamePlay(GamePlayEvent e){
-        //TODO:
+        for(GamePlayerProfile p : e.game.getAllPlayersAndSpectators())
+            p.player.teleport(e.game.getStartLocation());
+    }
+
+    @EventHandler
+    public void onPlayerMissesParkour(PlayerMissesParkourEvent e){
+        if(e.game.getGameName().equals(gameName)){
+            if(e.playerProfile.lastCheckPoint != null)
+                e.playerProfile.player.teleport(e.playerProfile.lastCheckPoint);
+            else
+                e.playerProfile.player.teleport(e.game.getStartLocation());
+        }
     }
 
     @EventHandler
     public void onPlayerGetCheckpoint(PlayerGetCheckpointEvent e){
-        //TODO:
+        if(e.game.getGameName().equals(gameName))
+            if(e.game.getGameState() == GameState.PLAYING) {
+                e.playerProfile.lastCheckPoint = e.checkpoint;
+                e.playerProfile.player.sendMessage(ChatColor.YELLOW + "Novo Checkpoint!");
+            }
     }
 
     @EventHandler
     public void onPlayerFinishGame(PlayerFinishGameEvent e) {
         //TODO:
+    }
+
+    @EventHandler
+    public void onPlayerMove(PlayerMoveEvent e){
+        Game game = GamesController.getGame(gameName);
+        if(game != null && game.getGameState() == GameState.PLAYING && game.isPlayer(e.getPlayer())){
+            Location checkpoint = getIfIsNextToSomeCheckpoint(game.getCheckpoints(), e.getPlayer().getLocation());
+            if(checkpoint != null)
+                Lib576.callEvent(new PlayerGetCheckpointEvent(game.getPlayerOrSpectator(e.getPlayer()), checkpoint, game));
+            if(game.getFinishLine().isInside(e.getPlayer().getLocation()))
+                Lib576.callEvent(new PlayerFinishGameEvent(game.getPlayerOrSpectator(e.getPlayer()), game));
+        }
+    }
+
+    private Location getIfIsNextToSomeCheckpoint(List<Location> checkpoints, Location location){
+        for(Location checkpoint : checkpoints){
+            int disX = LConvert.module(location.getBlockX() - checkpoint.getBlockX());
+            if(disX <= 1) {
+                int disY = LConvert.module(location.getBlockY() - checkpoint.getBlockY());
+                if(disY <= 1) {
+                    int disZ = LConvert.module(location.getBlockZ() - checkpoint.getBlockZ());
+                    if(disZ <= 1)
+                        return checkpoint;
+                }
+            }
+        }
+        return null;
     }
 
 }

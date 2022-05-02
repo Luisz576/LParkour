@@ -1,7 +1,11 @@
 package com.luisz.lparkour.game;
 
 import com.lib576.Lib576;
+import com.lib576.utils.Area;
 import com.luisz.lparkour.GamesController;
+import com.luisz.lparkour.game.commons.GamePlayerProfile;
+import com.luisz.lparkour.game.commons.GameState;
+import com.luisz.lparkour.game.commons.GameStopReason;
 import com.luisz.lparkour.game.events.GamePlayEvent;
 import com.luisz.lparkour.game.events.PlayerJoinGameEvent;
 import com.luisz.lparkour.game.events.PlayerQuitGameEvent;
@@ -10,6 +14,7 @@ import com.luisz.lparkour.game.listener.GameListener;
 import com.luisz.lparkour.game.save.GameData;
 import com.luisz.lparkour.game.save.GameLoader;
 import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.potion.PotionEffect;
@@ -22,10 +27,22 @@ public class Game {
     private final GameData gameData;
     private final GameListener gameListener;
     private final int timerId;
+
+    private int time = 0;
     private GameState gameState = GameState.STARTING;
+
+    public final int getTime(){ return this.time; }
+    public final GameState getGameState(){ return this.gameState; }
 
     private final List<GamePlayerProfile> players = new ArrayList<>();
     private final List<GamePlayerProfile> spectators = new ArrayList<>();
+
+    public final List<GamePlayerProfile> getAllPlayersAndSpectators(){
+        List<GamePlayerProfile> playersAndSpectators = new ArrayList<>();
+        playersAndSpectators.addAll(players);
+        playersAndSpectators.addAll(spectators);
+        return playersAndSpectators;
+    }
 
     public final GamePlayerProfile getPlayerOrSpectator(Player player){
         for(GamePlayerProfile p : players)
@@ -47,8 +64,14 @@ public class Game {
     //GameInfo
     public final String getGameName(){ return this.gameData.gameName; }
     public final int getMaxPlayers(){ return this.gameData.maxPlayers; }
+    public final Location getStartLocation(){ return this.gameData.startLocation; }
+    public final Location getWaitLocation(){ return this.gameData.waitLocation; }
+    public final List<Location> getCheckpoints(){ return this.gameData.checkpoints; }
+    public final Area getFinishLine(){ return this.gameData.finishLine; }
 
     public void destroyGame(){
+        players.clear();
+        spectators.clear();
         Lib576.sc.cancelTask(timerId);
         HandlerList.unregisterAll(this.gameListener);
         GamesController._destroyGame(this);
@@ -73,40 +96,39 @@ public class Game {
 
     //GAME LOOP
     private void run(){
-
+        if(gameState == GameState.PLAYING){
+            time++;
+        }
     }
 
     //Events
     public final void join(Player player){
         boolean isPlayer = false;
-        if(getMaxPlayers() > players.size()) {
+        if(gameState == GameState.STARTING && getMaxPlayers() > players.size()) {
             isPlayer = true;
             _addPlayer(player);
         }else
             _addSpectator(player);
+        player.setHealth(20);
+        player.getInventory().clear();
+        player.setLevel(0);
+        player.setExp(0);
+        player.setFoodLevel(20);
+        for(PotionEffect potionEffect : player.getActivePotionEffects())
+            player.removePotionEffect(potionEffect.getType());
+        if(gameState == GameState.STARTING)
+            player.teleport(getWaitLocation());
+        else
+            player.teleport(getStartLocation());
         Lib576.pm.callEvent(new PlayerJoinGameEvent(player, isPlayer, this));
     }
     private void _addPlayer(Player player){
         players.add(new GamePlayerProfile(player, this));
-        player.setHealth(20);
-        player.getInventory().clear();
-        player.setLevel(0);
-        player.setExp(0);
         player.setGameMode(GameMode.ADVENTURE);
-        player.setFoodLevel(20);
-        for(PotionEffect potionEffect : player.getActivePotionEffects())
-            player.removePotionEffect(potionEffect.getType());
     }
     private void _addSpectator(Player player){
         spectators.add(new GamePlayerProfile(player, this));
-        player.setHealth(20);
-        player.getInventory().clear();
-        player.setLevel(0);
-        player.setExp(0);
         player.setGameMode(GameMode.SPECTATOR);
-        player.setFoodLevel(20);
-        for(PotionEffect potionEffect : player.getActivePotionEffects())
-            player.removePotionEffect(potionEffect.getType());
     }
 
     public final void quit(Player player){
@@ -119,6 +141,7 @@ public class Game {
 
     public final void startGame(){
         //TODO:
+        time = 0;
         gameState = GameState.PLAYING;
         Lib576.callEvent(new GamePlayEvent(this));
     }
