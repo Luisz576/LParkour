@@ -2,7 +2,7 @@ package com.luisz.lparkour.game.listener;
 
 import com.lib576.Lib576;
 import com.lib576.utils.LConvert;
-import com.luisz.lparkour.GamesController;
+import com.luisz.lparkour.controller.GamesController;
 import com.luisz.lparkour.game.Game;
 import com.luisz.lparkour.game.commons.GamePlayerProfile;
 import com.luisz.lparkour.game.commons.GameState;

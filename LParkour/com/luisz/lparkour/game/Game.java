@@ -2,7 +2,8 @@ package com.luisz.lparkour.game;
 
 import com.lib576.Lib576;
 import com.lib576.utils.Area;
-import com.luisz.lparkour.GamesController;
+import com.luisz.lparkour.controller.GamesController;
+import com.luisz.lparkour.controller.SignsController;
 import com.luisz.lparkour.game.commons.GamePlayerProfile;
 import com.luisz.lparkour.game.commons.GameState;
 import com.luisz.lparkour.game.commons.GameStopReason;
@@ -64,6 +65,7 @@ public class Game {
     //GameInfo
     public final String getGameName(){ return this.gameData.gameName; }
     public final int getMaxPlayers(){ return this.gameData.maxPlayers; }
+    public final int getAmountOfPlayers(){ return this.players.size(); }
     public final Location getStartLocation(){ return this.gameData.startLocation; }
     public final Location getWaitLocation(){ return this.gameData.waitLocation; }
     public final List<Location> getCheckpoints(){ return this.gameData.checkpoints; }
@@ -121,6 +123,7 @@ public class Game {
         else
             player.teleport(getStartLocation());
         Lib576.pm.callEvent(new PlayerJoinGameEvent(player, isPlayer, this));
+        SignsController._updateSigns();
     }
     private void _addPlayer(Player player){
         players.add(new GamePlayerProfile(player, this));
@@ -137,6 +140,7 @@ public class Game {
         players.remove(p);
         spectators.remove(p);
         Lib576.pm.callEvent(new PlayerQuitGameEvent(player, isPlayer, this));
+        SignsController._updateSigns();
     }
 
     public final void startGame(){
@@ -144,11 +148,13 @@ public class Game {
         time = 0;
         gameState = GameState.PLAYING;
         Lib576.callEvent(new GamePlayEvent(this));
+        SignsController._updateSigns();
     }
 
     public final void finishGame(GameStopReason reason){
         //TODO:
         gameState = GameState.STOPING;
+        SignsController._updateSigns();
         switch (reason){
             case ALL_PASSED:
                 break;
@@ -156,6 +162,7 @@ public class Game {
                 destroyGame();
                 break;
         }
+        SignsController._updateSigns();
     }
 
     //Utils
