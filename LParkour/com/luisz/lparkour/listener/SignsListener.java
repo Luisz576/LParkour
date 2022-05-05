@@ -22,7 +22,7 @@ public class SignsListener implements Listener {
         if(game != null){
             if(!GamesController.isInSomeGame(e.player)){
                 e.player.sendMessage(ChatColor.YELLOW + "Entrando no game...");
-                game.join(e.player);
+                game.join(e.player, true);
             }else
                 e.player.sendMessage(ChatColor.RED + "Você já está em um game!");
         }else

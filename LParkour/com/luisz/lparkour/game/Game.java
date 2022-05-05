@@ -14,6 +14,7 @@ import com.luisz.lparkour.game.exception.GameWithTheSameNameAlreadyStarted;
 import com.luisz.lparkour.game.listener.GameListener;
 import com.luisz.lparkour.game.save.GameData;
 import com.luisz.lparkour.game.save.GameLoader;
+import com.luisz.lparkour.game.score.LParkourScoreboard;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -31,6 +32,7 @@ public class Game {
 
     private int time = 0;
     private GameState gameState = GameState.STARTING;
+    private LParkourScoreboard scoreboard;
 
     public final int getTime(){ return this.time; }
     public final GameState getGameState(){ return this.gameState; }
@@ -85,6 +87,7 @@ public class Game {
 
     public Game(GameLoader gameLoader) throws GameWithTheSameNameAlreadyStarted{
         this.gameData = gameLoader.loadData();
+        this.scoreboard = new LParkourScoreboard(this);
         if(GamesController.getGame(getGameName()) != null){
             throw new GameWithTheSameNameAlreadyStarted();
         }else{
@@ -99,12 +102,13 @@ public class Game {
     //GAME LOOP
     private void run(){
         if(gameState == GameState.PLAYING){
+            this.scoreboard._updateScoreboard();
             time++;
         }
     }
 
     //Events
-    public final void join(Player player){
+    public final void join(Player player, boolean callEvent){
         boolean isPlayer = false;
         if(gameState == GameState.STARTING && getMaxPlayers() > players.size()) {
             isPlayer = true;
@@ -122,16 +126,19 @@ public class Game {
             player.teleport(getWaitLocation());
         else
             player.teleport(getStartLocation());
-        Lib576.pm.callEvent(new PlayerJoinGameEvent(player, isPlayer, this));
+        if(callEvent)
+            Lib576.pm.callEvent(new PlayerJoinGameEvent(player, isPlayer, this));
         SignsController._updateSigns();
     }
     private void _addPlayer(Player player){
         players.add(new GamePlayerProfile(player, this));
         player.setGameMode(GameMode.ADVENTURE);
+        this.scoreboard._updateScoreboard();
     }
     private void _addSpectator(Player player){
         spectators.add(new GamePlayerProfile(player, this));
         player.setGameMode(GameMode.SPECTATOR);
+        this.scoreboard._updateScoreboard();
     }
 
     public final void quit(Player player){
@@ -141,6 +148,7 @@ public class Game {
         spectators.remove(p);
         Lib576.pm.callEvent(new PlayerQuitGameEvent(player, isPlayer, this));
         SignsController._updateSigns();
+        this.scoreboard._updateScoreboard();
     }
 
     public final void startGame(){
@@ -149,6 +157,7 @@ public class Game {
         gameState = GameState.PLAYING;
         Lib576.callEvent(new GamePlayEvent(this));
         SignsController._updateSigns();
+        this.scoreboard._updateScoreboard();
     }
 
     public final void finishGame(GameStopReason reason){
@@ -163,6 +172,7 @@ public class Game {
                 break;
         }
         SignsController._updateSigns();
+        this.scoreboard._updateScoreboard();
     }
 
     //Utils

@@ -8,6 +8,7 @@ public class GamePlayerProfile {
 
     public final Player player;
     public final Game game;
+    public int score = 0;
 
     public Location lastCheckPoint = null;
 

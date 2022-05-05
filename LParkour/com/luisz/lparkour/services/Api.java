@@ -1,24 +1,29 @@
 package com.luisz.lparkour.services;
 
 import com.lib576.web.HttpRequest;
-import com.luisz.lparkour.game.commons.GameScore;
+import com.luisz.lparkour.game.commons.GamePlayerProfile;
 import org.bukkit.entity.Player;
 
 public class Api {
 
-    public static final String SERVER_URL = "";
+    private static String SERVER_URL = "";
 
-    public static void setPlayerScoreInGame(GameScore gameScore){
+    public static void _startApi(){
+        ApiConfig apiConfig = new ApiConfig();
+        SERVER_URL = apiConfig.getApiBase();
+    }
+
+    public static void setPlayerScoreInGame(GamePlayerProfile gameScore){
         HttpRequest request = new HttpRequest(SERVER_URL);
         request.setParameter("player_uuid", gameScore.player.getUniqueId().toString());
-        request.setParameter("game_name", gameScore.gameName);
+        request.setParameter("game_name", gameScore.game.getGameName());
         request.setParameter("score", "" + gameScore.score);
         request.getJsonFromUrl(); //Do request
     }
 
-    public static GameScore getScoreFromPlayerAndGame(Player player, String gameName){
+    public static int getScoreFromPlayerAndGame(Player player, String gameName){
         //TODO: GET SCORE
-        return null;
+        return -1;
     }
 
 }

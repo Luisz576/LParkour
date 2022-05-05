@@ -7,6 +7,7 @@ import com.luisz.lparkour.game.Game;
 import com.luisz.lparkour.game.commons.GamePlayerProfile;
 import com.luisz.lparkour.game.commons.GameState;
 import com.luisz.lparkour.game.events.*;
+import com.luisz.lparkour.services.Api;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.event.EventHandler;
@@ -25,7 +26,7 @@ public class GameListener implements Listener {
 
     @EventHandler
     public void onPlayerJoinGame(PlayerJoinGameEvent e){
-        if(e.game.getGameName().equalsIgnoreCase(gameName)) {
+        if(e.game.getGameName().equals(gameName)) {
             if (e.isPlayer)
                 e.game.sendMessageToAllPlayers(ChatColor.YELLOW + e.player.getName() + ChatColor.GREEN + " entrou!");
             else
@@ -35,7 +36,7 @@ public class GameListener implements Listener {
 
     @EventHandler
     public void onPlayerQuitGame(PlayerQuitGameEvent e){
-        if(e.game.getGameName().equalsIgnoreCase(gameName)) {
+        if(e.game.getGameName().equals(gameName)) {
             if (e.isPlayer)
                 e.game.sendMessageToAllPlayers(ChatColor.YELLOW + e.player.getName() + ChatColor.RED + " saiu!");
             else
@@ -45,8 +46,9 @@ public class GameListener implements Listener {
 
     @EventHandler
     public void onGamePlay(GamePlayEvent e){
-        for(GamePlayerProfile p : e.game.getAllPlayersAndSpectators())
-            p.player.teleport(e.game.getStartLocation());
+        if(e.game.getGameName().equals(gameName))
+            for(GamePlayerProfile p : e.game.getAllPlayersAndSpectators())
+                p.player.teleport(e.game.getStartLocation());
     }
 
     @EventHandler
@@ -70,7 +72,12 @@ public class GameListener implements Listener {
 
     @EventHandler
     public void onPlayerFinishGame(PlayerFinishGameEvent e) {
-        //TODO:
+        if(e.game.getGameName().equals(gameName)){
+            e.playerProfile.score = e.game.getTime();
+            Api.setPlayerScoreInGame(e.playerProfile);
+            e.game.sendMessageToAllPlayers(ChatColor.YELLOW + "O jogador " + ChatColor.GREEN + e.playerProfile.player.getName() + ChatColor.YELLOW + " terminou em " + e.playerProfile.score + "s");
+            e.game.join(e.playerProfile.player, false);
+        }
     }
 
     @EventHandler
